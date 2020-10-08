@@ -23,12 +23,12 @@ def get_column_na_alt(col):
         'PEDCYLCOUNT': 0,
         'VEHCOUNT': 0,
         'JUNCTIONTYPE': '',
-        'INATTENTIONIND': '',
+        'INATTENTIONIND': 'N',
         'UNDERINFL': '',
         'WEATHER': '',
         'ROADCOND': '',
         'LIGHTCOND': '',
-        'SPEEDING': '',
+        'SPEEDING': 'N',
         'HITPARKEDCAR': ''
     }
     return fill_na_alt[col]
@@ -36,19 +36,16 @@ def get_column_na_alt(col):
 
 def get_processed_dataframe(df, columns):
     column_map = {}
-    print(df.head())
     categorical_columns = ['COLLISIONTYPE', 'JUNCTIONTYPE', 'WEATHER', 'ROADCOND', 'LIGHTCOND']
     one_hot_columns = ['ADDRTYPE', 'INATTENTIONIND', 'UNDERINFL', 'SPEEDING', 'HITPARKEDCAR']
-    df['UNDERINFL'].replace('0', 'N', inplace=True)
-    df['UNDERINFL'].replace('1', 'Y', inplace=True)
-    df['INATTENTIONIND'].fillna('N', inplace=True)
-    df['SPEEDING'].fillna('N', inplace=True)
     for col in categorical_columns:
         df.fillna(get_column_na_alt(col), inplace=True)
         column_map[col] = {}
         unique_values = df[col].unique()
         for i, uv in enumerate(unique_values):
             column_map[col][uv] = i
+    column_map['UNDERINFL'] = {'0': 'N',
+                               '1': 'Y'}
     df.replace(column_map, inplace=True)
     for col in one_hot_columns:
         df_temp = pd.get_dummies(df[col])
