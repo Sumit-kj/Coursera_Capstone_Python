@@ -69,7 +69,8 @@ def get_column_correlation(df):
 
 
 def main():
-    file_path = 'C:/Users/SumitKJ/PycharmProjects/AppliedDataScienceCapstone/data/Data-Collisions.csv'
+    base_path = 'C:/Users/SumitKJ/PycharmProjects/AppliedDataScienceCapstone'
+    file_path = base_path + '/data/Data-Collisions.csv'
     df_collision, columns = get_dataframe(file_path)
     df_collision, column_map = get_processed_dataframe(df_collision, columns)
     get_column_correlation(df_collision)
