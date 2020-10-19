@@ -1,21 +1,30 @@
 import pandas as pd
-import numpy as np
+# import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sbs
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.neighbors import NearestCentroid
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neural_network import MLPClassifier
+from sklearn import metrics
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 
 def get_dataframe(file_path):
     df = pd.read_csv(file_path)
-    columns = ['SEVERITYCODE', 'ADDRTYPE', 'INTKEY', 'COLLISIONTYPE', 'PERSONCOUNT', 'PEDCOUNT', 'PEDCYLCOUNT',
+    features = ['SEVERITYCODE', 'ADDRTYPE', 'COLLISIONTYPE', 'PERSONCOUNT', 'PEDCOUNT', 'PEDCYLCOUNT',
                'VEHCOUNT', 'JUNCTIONTYPE', 'INATTENTIONIND', 'UNDERINFL', 'WEATHER', 'ROADCOND', 'LIGHTCOND',
                'SPEEDING', 'HITPARKEDCAR']
-    return df[columns], columns
+    return df[features], features
 
 
 def get_column_na_alt(col):
     fill_na_alt = {
         'SEVERITYCODE': 0,
-        'ADDRTYPE': ' ',
+        'ADDRTYPE': '',
         'INTKEY': 0,
         'COLLISIONTYPE': '',
         'PERSONCOUNT': 0,
@@ -36,6 +45,10 @@ def get_column_na_alt(col):
 
 def get_processed_dataframe(df, columns):
     column_map = {}
+    features = ['ADDRTYPE', 'COLLISIONTYPE', 'PERSONCOUNT', 'PEDCOUNT', 'PEDCYLCOUNT',
+                'VEHCOUNT', 'JUNCTIONTYPE', 'INATTENTIONIND', 'UNDERINFL', 'WEATHER', 'ROADCOND', 'LIGHTCOND',
+                'SPEEDING', 'HITPARKEDCAR']
+    target = 'SEVERITYCODE'
     categorical_columns = ['COLLISIONTYPE', 'JUNCTIONTYPE', 'WEATHER', 'ROADCOND', 'LIGHTCOND']
     one_hot_columns = ['ADDRTYPE', 'INATTENTIONIND', 'UNDERINFL', 'SPEEDING', 'HITPARKEDCAR']
     for col in categorical_columns:
@@ -59,7 +72,7 @@ def get_processed_dataframe(df, columns):
             df.drop([col, str(col+'_').strip()], axis=1, inplace=True)
         else:
             df.drop([col], axis=1, inplace=True)
-    return df, column_map
+    return df, column_map, features, target
 
 
 def get_column_correlation(df):
@@ -68,12 +81,64 @@ def get_column_correlation(df):
     plt.show()
 
 
+def apply_model(X_train, X_test, y_train, y_test, model):
+    classifier = model
+    classifier_model = classifier.fit(X_train, y_train)
+    y_pred = classifier_model.predict(X_test)
+    return get_accuracy_for_model(y_pred, y_test)
+
+
+def get_accuracy_for_model(y_pred, y_test):
+    return metrics.accuracy_score(y_test, y_pred)
+
+
+def apply_model_and_get_accuracy(df):
+    X = df.drop('SEVERITYCODE', axis=1)
+    y = df.SEVERITYCODE
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1)
+    model_list = [
+        {
+            'name': 'Decision Tree',
+            'function': DecisionTreeClassifier(),
+            'accuracy': 0
+        },
+        {
+            'name': 'Gaussian NB',
+            'function': GaussianNB(),
+            'accuracy': 0
+        },
+        {
+            'name': 'Nearest Neighbors',
+            'function': NearestCentroid(),
+            'accuracy': 0
+        },
+        {
+            'name': 'Neural Network',
+            'function': MLPClassifier(
+                solver='lbfgs',
+                alpha=1e-5,
+                hidden_layer_sizes=(5, 2),
+                random_state=1
+            ),
+            'accuracy': 0
+        }
+    ]
+    for model in model_list:
+        model['accuracy'] = apply_model(X_train, X_test, y_train, y_test, model['function'])
+        print('Accuracy for ' + model['name'] + ': ', model['accuracy'])
+    return model_list
+
+
 def main():
     base_path = 'C:/Users/SumitKJ/PycharmProjects/AppliedDataScienceCapstone'
     file_path = base_path + '/data/Data-Collisions.csv'
-    df_collision, columns = get_dataframe(file_path)
-    df_collision, column_map = get_processed_dataframe(df_collision, columns)
+    df_collision, features = get_dataframe(file_path)
+    df_collision, column_map, features, target = get_processed_dataframe(df_collision, features)
     get_column_correlation(df_collision)
+    model_list = apply_model_and_get_accuracy(df_collision)
+    exit(0)
 
 
-main()
+if __name__ == '__main__':
+    main()
+
